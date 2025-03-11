@@ -3,7 +3,7 @@
 #[cfg(feature = "alloc")]
 use alloc::ffi::CString;
 
-use core::ffi::{CStr, c_void};
+use core::ffi::{c_void, CStr};
 use core::marker::PhantomData;
 use core::mem::MaybeUninit;
 use core::ptr::{self, NonNull};
@@ -124,8 +124,7 @@ impl<'a> DialogMessage<'a> {
         header: &'a CStr,
         x: u8,
         y: u8,
-        horizontal: Align,
-        vertical: Align,
+        align: Align,
     ) {
         unsafe {
             sys::dialog_message_set_header(
@@ -133,8 +132,8 @@ impl<'a> DialogMessage<'a> {
                 header.as_ptr(),
                 x,
                 y,
-                horizontal.to_sys(),
-                vertical.to_sys(),
+                align.horizontal(),
+                align.vertical(),
             );
         }
     }
@@ -146,8 +145,7 @@ impl<'a> DialogMessage<'a> {
         text: &'a CStr,
         x: u8,
         y: u8,
-        horizontal: Align,
-        vertical: Align,
+        align: Align,
     ) {
         unsafe {
             sys::dialog_message_set_text(
@@ -155,8 +153,8 @@ impl<'a> DialogMessage<'a> {
                 text.as_ptr(),
                 x,
                 y,
-                horizontal.to_sys(),
-                vertical.to_sys(),
+                align.horizontal(),
+                align.vertical(),
             );
         }
     }
@@ -374,7 +372,7 @@ pub fn alert(text: &str) {
     let mut dialogs = DialogsApp::open();
     let mut message = DialogMessage::new();
 
-    message.set_text(&text, 0, 0, Align::Left, Align::Top);
+    message.set_text(&text, 0, 0, Align::TopLeft);
     message.set_buttons(None, Some(c"OK"), None);
 
     dialogs.show_message(&message);

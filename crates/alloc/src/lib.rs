@@ -1,5 +1,4 @@
 //! Alloc support for the Flipper Zero.
-//! *Note:* This currently requires using nightly.
 
 #![no_std]
 #![deny(rustdoc::broken_intra_doc_links)]

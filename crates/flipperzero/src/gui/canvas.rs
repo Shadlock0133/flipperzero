@@ -1,27 +1,68 @@
 //! Canvases.
 
 use core::cell::UnsafeCell;
+use core::ffi::CStr;
 use core::marker::PhantomPinned;
 
 use flipperzero_sys as sys;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Font {
+    Primary,
+    Secondary,
+    Keyboard,
+    BigNumbers,
+}
+
+impl Font {
+    pub fn as_sys(&self) -> sys::Font {
+        match self {
+            Font::Primary => sys::FontPrimary,
+            Font::Secondary => sys::FontSecondary,
+            Font::Keyboard => sys::FontKeyboard,
+            Font::BigNumbers => sys::FontBigNumbers,
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Align {
-    Left,
-    Right,
+    TopLeft,
     Top,
-    Bottom,
+    TopRight,
+    Left,
     Center,
+    Right,
+    BottomLeft,
+    Bottom,
+    BottomRight,
 }
 
 impl Align {
-    pub fn to_sys(&self) -> sys::Align {
+    pub fn horizontal(&self) -> sys::Align {
         match self {
-            Self::Left => sys::AlignLeft,
-            Self::Right => sys::AlignRight,
-            Self::Top => sys::AlignTop,
-            Self::Bottom => sys::AlignBottom,
-            Self::Center => sys::AlignCenter,
+            Align::TopLeft => sys::AlignLeft,
+            Align::Top => sys::AlignCenter,
+            Align::TopRight => sys::AlignRight,
+            Align::Left => sys::AlignLeft,
+            Align::Center => sys::AlignCenter,
+            Align::Right => sys::AlignRight,
+            Align::BottomLeft => sys::AlignLeft,
+            Align::Bottom => sys::AlignCenter,
+            Align::BottomRight => sys::AlignRight,
+        }
+    }
+    pub fn vertical(&self) -> sys::Align {
+        match self {
+            Align::TopLeft => sys::AlignTop,
+            Align::Top => sys::AlignTop,
+            Align::TopRight => sys::AlignTop,
+            Align::Left => sys::AlignCenter,
+            Align::Center => sys::AlignCenter,
+            Align::Right => sys::AlignCenter,
+            Align::BottomLeft => sys::AlignBottom,
+            Align::Bottom => sys::AlignBottom,
+            Align::BottomRight => sys::AlignBottom,
         }
     }
 }
@@ -75,6 +116,94 @@ impl Canvas {
     /// Commit Canvas and send buffer to display.
     pub fn commit(&self) {
         unsafe { sys::canvas_commit(self.as_ptr()) }
+    }
+
+    pub fn width(&self) -> usize {
+        unsafe { sys::canvas_width(self.as_ptr()) }
+    }
+
+    pub fn height(&self) -> usize {
+        unsafe { sys::canvas_height(self.as_ptr()) }
+    }
+
+    pub fn current_font_height(&self) -> usize {
+        unsafe { sys::canvas_current_font_height(self.as_ptr()) }
+    }
+
+    pub fn set_font(&self, font: Font) {
+        unsafe { sys::canvas_set_font(self.as_ptr(), font.as_sys()) };
+    }
+
+    pub fn draw_box(&self, x: i32, y: i32, width: usize, height: usize) {
+        unsafe { sys::canvas_draw_box(self.as_ptr(), x, y, width, height) };
+    }
+
+    pub fn draw_circle(&self, x: i32, y: i32, r: usize) {
+        unsafe { sys::canvas_draw_circle(self.as_ptr(), x, y, r) };
+    }
+
+    pub fn draw_disc(&self, x: i32, y: i32, r: usize) {
+        unsafe { sys::canvas_draw_disc(self.as_ptr(), x, y, r) };
+    }
+
+    pub fn draw_dot(&self, x: i32, y: i32) {
+        unsafe { sys::canvas_draw_dot(self.as_ptr(), x, y) };
+    }
+
+    pub fn draw_frame(&self, x: i32, y: i32, width: usize, height: usize) {
+        unsafe { sys::canvas_draw_frame(self.as_ptr(), x, y, width, height) };
+    }
+
+    pub fn draw_glyph(&self, x: i32, y: i32, ch: u16) {
+        unsafe { sys::canvas_draw_glyph(self.as_ptr(), x, y, ch) };
+    }
+
+    pub fn draw_icon(&self, x: i32, y: i32, icon: &sys::Icon) {
+        unsafe {
+            sys::canvas_draw_icon(self.as_ptr(), x, y, icon);
+        }
+    }
+
+    pub fn draw_line(&self, x1: i32, y1: i32, x2: i32, y2: i32) {
+        unsafe { sys::canvas_draw_line(self.as_ptr(), x1, y1, x2, y2) };
+    }
+
+    #[doc(alias = "draw_rbox")]
+    pub fn draw_rounded_box(&self, x: i32, y: i32, width: usize, height: usize, r: usize) {
+        unsafe { sys::canvas_draw_rbox(self.as_ptr(), x, y, width, height, r) };
+    }
+
+    #[doc(alias = "draw_rframe")]
+    pub fn draw_rounded_frame(&self, x: i32, y: i32, width: usize, height: usize, r: usize) {
+        unsafe { sys::canvas_draw_rframe(self.as_ptr(), x, y, width, height, r) };
+    }
+
+    pub fn draw_str(&self, x: i32, y: i32, str: &CStr) {
+        unsafe { sys::canvas_draw_str(self.as_ptr(), x, y, str.as_ptr()) };
+    }
+
+    pub fn draw_str_aligned(&self, x: i32, y: i32, align: Align, str: &CStr) {
+        unsafe {
+            sys::canvas_draw_str_aligned(
+                self.as_ptr(),
+                x,
+                y,
+                align.horizontal(),
+                align.vertical(),
+                str.as_ptr(),
+            )
+        };
+    }
+
+    pub fn string_width(&self, str: &CStr) -> u16 {
+        unsafe { sys::canvas_string_width(self.as_ptr(), str.as_ptr()) }
+    }
+
+    /// Set transparency mode
+    pub fn set_bitmap_mode(&self, alpha: bool) {
+        unsafe {
+            sys::canvas_set_bitmap_mode(self.as_ptr(), alpha);
+        }
     }
 }
 

@@ -1,6 +1,8 @@
 //! GUI service.
 
 pub mod canvas;
+#[cfg(feature = "alloc")]
+pub mod view_port;
 
 use core::ffi::CStr;
 use core::marker::PhantomData;
@@ -10,6 +12,8 @@ use core::ptr;
 use canvas::Canvas;
 use flipperzero_sys as sys;
 use flipperzero_sys::furi::UnsafeRecord;
+#[cfg(feature = "alloc")]
+use view_port::{BoundViewPort, ViewPort};
 
 /// GUI service record.
 pub struct Gui {
@@ -32,6 +36,19 @@ impl Gui {
     #[inline]
     pub fn as_ptr(&self) -> *mut sys::Gui {
         self.record.as_ptr()
+    }
+
+    #[cfg(feature = "alloc")]
+    pub fn add_view_port<'a>(
+        &self,
+        view_port: ViewPort<'a>,
+        layer: sys::GuiLayer,
+    ) -> BoundViewPort<'_, 'a> {
+        unsafe { sys::gui_add_view_port(self.as_ptr(), view_port.as_ptr(), layer) };
+        BoundViewPort {
+            view_port,
+            gui: self,
+        }
     }
 
     /// Get gui canvas frame buffer size in bytes.
